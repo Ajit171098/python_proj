@@ -1,0 +1,167 @@
+from chatterbot import ChatBot
+from chatterbot.trainers import ListTrainer,ChatterBotCorpusTrainer
+from tkinter import *
+import pyttsx3 as pp
+import speech_recognition as s
+import threading
+import os
+#from PIL import ImageTk,Image
+
+
+engine = pp.init()
+
+voices = engine.getProperty('voices')
+print(voices)
+
+engine.setProperty('voice', voices[1].id)
+
+
+def speak(word):
+    engine.say(word)
+    engine.runAndWait()
+
+
+# pyttsx3
+bot = ChatBot("My Bot")
+
+"""convo = [
+   'hello','hi','hi there !'
+    'what is your name ?','who are you?',
+    'I\'m Chitti the robo speed 1 terahertz ,memory 1 zigabyte','who created you?',' i was created by Ajit , Ravi , Vignesh and Arun',
+    'how are you ?',
+    'I am doing great these days',
+    'thank you',
+    'In which city you live ?',
+    'I live in lucknow','in which year u was created',
+    'I was created on 2019',
+    'In which language you talk?',
+    'I mostly talk in english'
+    
+]"""
+
+#trainer = ListTrainer(bot)
+trainer=ChatterBotCorpusTrainer(bot)
+
+
+trainer1=ListTrainer(bot)
+for file in os.listdir('data'):
+        print('Training using '+file)
+        convData = open('data/' + file).readlines()
+        trainer1.train(convData)
+        print("Training completed for "+file)
+
+# now training the bot with the help of trainer
+
+trainer.train("chatterbot.corpus.english","chatterbot.corpus.english.greetings")
+
+# answer = bot.get_response("what is your name?")
+# print(answer)
+
+main = Tk()
+#path="images.jpg"
+image3= PhotoImage(file='background11.png')
+main.configure(background='#CCCCFF')
+
+main.geometry("600x600")
+
+main.title("My Chat bot")
+img = PhotoImage(file="background4.png")
+
+photoL = Label(main, image=img)
+
+photoL.pack(pady=5)
+
+
+# takey query : it takes audio as input from user and convert it to string..
+
+def takeQuery():
+    sr = s.Recognizer()
+    sr.pause_threshold = 1
+    print("your bot is listening try to speak")
+    with s.Microphone() as m:
+        try:
+            audio = sr.listen(m)
+            query = sr.recognize_google(audio, language='eng-in')
+            print(query)
+            textF.delete(0, END)
+            textF.insert(0, query)
+            ask_from_bot()
+        except Exception as e:
+            print(e)
+            print("not recognized")
+i=0
+frame = Frame(main,height=300,width=600,)
+canvas = Canvas(frame,height=300,width=600)
+
+scroll_y = Scrollbar(frame,orient="vertical", command=canvas.yview)
+frame1 =Frame(canvas)
+#frame1.configure(image=image3)
+image1= PhotoImage(file = 'robo.png')
+image2= PhotoImage(file = 'person.png')
+canvas.create_window(0, 0, anchor='nw', window=frame1)
+canvas.update_idletasks()
+canvas.configure(yscrollcommand=scroll_y.set)
+frame1.bind("<Configure>",lambda e:canvas.configure(scrollregion=canvas.bbox('all')))
+   # canvas.update_idletasks())
+scroll_y.pack(side='right',fill=Y)
+canvas.pack(side="left",expand=True)
+
+
+def ask_from_bot():
+    global i
+    query = textF.get()
+    answer_from_bot = bot.get_response(query)
+    #msgs.insert(END, "you : " + query)
+    Label(frame1,foreground='white',background='red',image=image2,compound='left',anchor='w', text=query,wraplength=300).grid(row=i,column=0,sticky=NSEW)
+    print(type(answer_from_bot))
+    i=i+1
+    Label(frame1,text=' ').grid(row=i,column=0,sticky=NSEW)
+    i=i+1
+    Label(frame1,foreground='black',background='#2ECC71',compound='left',image=image1,anchor='w', text=answer_from_bot,wraplength=400).grid(row=i,column=0,sticky=NSEW)
+    #msgs.insert(END, "bot : " + str(answer_from_bot))
+    speak(answer_from_bot)
+    textF.delete(0, END)
+    i=i+1
+    Label(frame1,text=' ').grid(row=i,column=0,sticky=NSEW)
+    i=i+1
+
+
+
+
+#sc.pack(side=RIGHT, fill=Y)
+
+#msgs.pack(side=LEFT, fill=BOTH, pady=10)
+#msgs1.pack(side=RIGHT, fill=BOTH, pady=10)
+
+frame.pack()
+
+# creating text field
+
+textF = Entry(main, font=("Verdana", 20))
+textF.pack(fill=X, pady=10)
+imagebot= PhotoImage(file = 'buttonimg.png')
+
+btn = Button(main, text="Ask me",compound='center',image=imagebot,height=50,width=200 ,font=("Verdana", 20), command=ask_from_bot)
+btn.pack()
+
+
+# creating a function
+def enter_function(event):
+    btn.invoke()
+
+
+# going to bind main window with enter key...
+
+main.bind('<Return>', enter_function)
+
+
+def repeatL():
+    while True:
+        takeQuery()
+
+
+t = threading.Thread(target=repeatL)
+
+t.start()
+
+main.mainloop()
